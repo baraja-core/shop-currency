@@ -1,7 +1,7 @@
 {
-	"name": "baraja-core/template",
-	"description": "This is a template package.",
-	"homepage": "https://github.com/baraja-core/template",
+	"name": "baraja-core/shop-currency",
+	"description": "Shop currency.",
+	"homepage": "https://github.com/baraja-core/shop-currency",
 	"authors": [
 		{
 			"name": "Jan Barášek",
@@ -9,7 +9,10 @@
 		}
 	],
 	"require": {
-		"php": "^8.0"
+		"php": "^8.0",
+		"baraja-core/doctrine": "^3.2",
+		"baraja-core/currency-exchange-rate": "^2.0",
+		"baraja-core/localization": "^2.0"
 	},
 	"require-dev": {
 		"phpstan/phpstan": "^0.12.74",
