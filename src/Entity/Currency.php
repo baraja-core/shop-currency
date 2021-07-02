@@ -51,7 +51,7 @@ class Currency
 		if (!preg_match('/^[A-Z]{3}/', $code)) {
 			throw new \InvalidArgumentException(
 				'Currency code must be 3 exactly chars long, '
-				. 'for example "USD", but "' . $code . " given.",
+				. 'for example "USD", but "' . $code . '" given.',
 			);
 		}
 	}

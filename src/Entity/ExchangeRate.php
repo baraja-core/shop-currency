@@ -87,7 +87,7 @@ class ExchangeRate
 
 	public function getValue(): float
 	{
-		$value = (float)($this->getMiddle() ?? ((($this->getBuy() ?? 0) + ($this->getSell() ?? 0)) / 2));
+		$value = (float) ($this->getMiddle() ?? ((($this->getBuy() ?? 0) + ($this->getSell() ?? 0)) / 2));
 		if (Floats::isZero($value)) {
 			throw new \LogicException(
 				'Exchange rate can not be resolved for "' . $this->getPair() . '" '
