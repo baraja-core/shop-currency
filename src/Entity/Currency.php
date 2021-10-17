@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Baraja\Shop\Entity\Currency;
 
+
 use Baraja\Doctrine\Identifier\IdentifierUnsigned;
 use Baraja\Localization\Localization;
 use Doctrine\ORM\Mapping as ORM;
@@ -44,11 +45,11 @@ class Currency
 
 	public static function validateCode(string $code): void
 	{
-		$code = trim(strtoupper($code));
+		$code = strtoupper(trim($code));
 		if ($code === '') {
 			throw new \InvalidArgumentException('Currency code is required.');
 		}
-		if (!preg_match('/^[A-Z]{3}/', $code)) {
+		if (preg_match('/^[A-Z]{3}/', $code) !== 1) {
 			throw new \InvalidArgumentException(
 				'Currency code must be 3 exactly chars long, '
 				. 'for example "USD", but "' . $code . '" given.',
@@ -65,7 +66,7 @@ class Currency
 
 	public function setCode(string $code): void
 	{
-		$code = trim(strtoupper($code));
+		$code = strtoupper(trim($code));
 		self::validateCode($code);
 		$this->code = $code;
 	}
