@@ -7,6 +7,7 @@ namespace Baraja\Shop\Currency;
 
 use Baraja\Doctrine\EntityManager;
 use Baraja\Shop\Entity\Currency\Currency;
+use Baraja\Shop\Entity\Currency\ExchangeRate;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\NoResultException;
 
@@ -33,6 +34,48 @@ final class CurrencyManager
 	}
 
 
+	public function getRateToday(Currency|string $source, Currency|string $target): ExchangeRate
+	{
+		return $this->getRate(
+			source: $source,
+			target: $target,
+			date: new \DateTimeImmutable('today')
+		);
+	}
+
+
+	public function getRate(
+		Currency|string $source,
+		Currency|string $target,
+		\DateTimeInterface $date
+	): ExchangeRate {
+		$date = ExchangeRateFetcher::resolveDate($date);
+		try {
+			return $this->entityManager->getRepository(ExchangeRate::class)
+				->createQueryBuilder('rate')
+				->where('rate.pair = :pair')
+				->andWhere('rate.date >= :date')
+				->setParameter('pair', ExchangeRate::formatPair($source, $target))
+				->setParameter('date', $date->format('Y-m-d') . ' 00:00:00')
+				->orderBy('rate.date', 'ASC')
+				->setMaxResults(1)
+				->getQuery()
+				->getSingleResult();
+		} catch (NoResultException | NonUniqueResultException) {
+			$rate = (new ExchangeRateFetcher)
+				->fetch(
+					$this->getCurrency($source),
+					$this->getCurrency($target),
+					$date
+				);
+			$this->entityManager->persist($rate);
+			$this->entityManager->flush();
+
+			return $rate;
+		}
+	}
+
+
 	/**
 	 * @return array<int, Currency>
 	 */
@@ -46,23 +89,25 @@ final class CurrencyManager
 	}
 
 
-	public function getCurrency(string $code): Currency
+	public function getCurrency(Currency|string $code): Currency
 	{
-		Currency::validateCode($code);
+		if ($code instanceof Currency) {
+			return $code;
+		}
 
 		return $this->entityManager->getRepository(Currency::class)
 			->createQueryBuilder('currency')
 			->where('currency.code = :code')
-			->setParameter('code', $code)
+			->setParameter('code', Currency::normalizeCode($code))
 			->setMaxResults(1)
 			->getQuery()
 			->getSingleResult();
 	}
 
 
-	public function createCurrency(string $code, string $symbol, int $unit): Currency
+	public function createCurrency(string $code, string $symbol): Currency
 	{
-		$currency = new Currency($code, $symbol, $unit);
+		$currency = new Currency($code, $symbol);
 		$this->entityManager->persist($currency);
 		$this->entityManager->flush();
 
@@ -107,7 +152,7 @@ final class CurrencyManager
 			$first->setMain(true);
 			$needFlush = true;
 		} else {
-			$return = $this->createCurrency('USD', '$', 1);
+			$return = $this->createCurrency('USD', '$');
 			$return->setMain(true);
 			$return->setLocale('en');
 			$needFlush = true;

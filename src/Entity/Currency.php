@@ -21,29 +21,47 @@ class Currency
 	#[ORM\Column(type: 'string', length: 3)]
 	private string $symbol;
 
-	#[ORM\Column(type: 'int')]
-	private int $unit = 1;
-
-	#[ORM\Column(type: 'bool')]
+	#[ORM\Column(type: 'boolean')]
 	private bool $main = false;
+
+	#[ORM\Column(type: 'boolean')]
+	private bool $active = true;
+
+	#[ORM\Column(type: 'boolean')]
+	private bool $rateLock = false;
 
 	#[ORM\Column(type: 'string', length: 2, nullable: true)]
 	private ?string $locale = null;
 
+	#[ORM\Column(type: 'string', length: 2)]
+	private string $thousandSeparator = ' ';
+
+	#[ORM\Column(type: 'string', length: 2)]
+	private string $decimalSeparator = ',';
+
+	#[ORM\Column(type: 'integer')]
+	private int $decimalPrecision = 2;
+
+	#[ORM\Column(type: 'string', length: 48)]
+	private string $defaultSchema = '%NUM% %SYMBOL%';
+
 	#[ORM\Column(type: 'datetime')]
 	private \DateTimeInterface $insertedDate;
 
+	#[ORM\Column(type: 'datetime')]
+	private \DateTimeInterface $updatedDate;
 
-	public function __construct(string $code, string $symbol, int $unit = 1)
+
+	public function __construct(string $code, string $symbol)
 	{
 		$this->setCode($code);
 		$this->setSymbol($symbol);
-		$this->setUnit($unit);
 		$this->insertedDate = new \DateTimeImmutable;
+		$this->updatedDate = new \DateTimeImmutable;
 	}
 
 
-	public static function validateCode(string $code): void
+	public static function normalizeCode(string $code): string
 	{
 		$code = strtoupper(trim($code));
 		if ($code === '') {
@@ -55,6 +73,8 @@ class Currency
 				. 'for example "USD", but "' . $code . '" given.',
 			);
 		}
+
+		return $code;
 	}
 
 
@@ -66,9 +86,7 @@ class Currency
 
 	public function setCode(string $code): void
 	{
-		$code = strtoupper(trim($code));
-		self::validateCode($code);
-		$this->code = $code;
+		$this->code = self::normalizeCode($code);
 	}
 
 
@@ -81,21 +99,6 @@ class Currency
 	public function setSymbol(string $symbol): void
 	{
 		$this->symbol = $symbol;
-	}
-
-
-	public function getUnit(): int
-	{
-		return $this->unit;
-	}
-
-
-	public function setUnit(int $unit): void
-	{
-		if ($unit <= 0) {
-			throw new \InvalidArgumentException('Unit can not be negative or zero.');
-		}
-		$this->unit = $unit;
 	}
 
 
@@ -126,8 +129,86 @@ class Currency
 	}
 
 
+	public function isActive(): bool
+	{
+		return $this->active;
+	}
+
+
+	public function setActive(bool $active): void
+	{
+		$this->active = $active;
+	}
+
+
+	public function isRateLock(): bool
+	{
+		return $this->rateLock;
+	}
+
+
+	public function setRateLock(bool $rateLock): void
+	{
+		$this->rateLock = $rateLock;
+	}
+
+
+	public function getThousandSeparator(): string
+	{
+		return $this->thousandSeparator;
+	}
+
+
+	public function setThousandSeparator(string $thousandSeparator): void
+	{
+		$this->thousandSeparator = $thousandSeparator;
+	}
+
+
+	public function getDecimalSeparator(): string
+	{
+		return $this->decimalSeparator;
+	}
+
+
+	public function setDecimalSeparator(string $decimalSeparator): void
+	{
+		$this->decimalSeparator = $decimalSeparator;
+	}
+
+
+	public function getDecimalPrecision(): int
+	{
+		return $this->decimalPrecision;
+	}
+
+
+	public function setDecimalPrecision(int $decimalPrecision): void
+	{
+		$this->decimalPrecision = $decimalPrecision;
+	}
+
+
+	public function getDefaultSchema(): string
+	{
+		return $this->defaultSchema;
+	}
+
+
+	public function setDefaultSchema(string $defaultSchema): void
+	{
+		$this->defaultSchema = $defaultSchema;
+	}
+
+
 	public function getInsertedDate(): \DateTimeInterface
 	{
 		return $this->insertedDate;
+	}
+
+
+	public function getUpdatedDate(): \DateTimeInterface
+	{
+		return $this->updatedDate;
 	}
 }

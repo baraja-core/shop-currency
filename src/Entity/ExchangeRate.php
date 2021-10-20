@@ -10,7 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Nette\Utils\Floats;
 
 #[ORM\Entity]
-#[ORM\Table(name: 'shop__currency')]
+#[ORM\Table(name: 'shop__currency_rate')]
 class ExchangeRate
 {
 	use IdentifierUnsigned;
@@ -54,8 +54,8 @@ class ExchangeRate
 		if ($target instanceof Currency) {
 			$target = $target->getCode();
 		}
-		Currency::validateCode($source);
-		Currency::validateCode($target);
+		$source = Currency::normalizeCode($source);
+		$target = Currency::normalizeCode($target);
 
 		return $source . $target;
 	}
