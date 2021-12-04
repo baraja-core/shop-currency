@@ -21,16 +21,22 @@ final class CurrencyManager
 
 	public function getMainCurrency(): Currency
 	{
-		try {
-			return $this->entityManager->getRepository(Currency::class)
-				->createQueryBuilder('currency')
-				->where('currency.main = TRUE')
-				->setMaxResults(1)
-				->getQuery()
-				->getSingleResult();
-		} catch (NoResultException | NonUniqueResultException) {
-			return $this->fixCurrenciesAndReturnMain();
+		static $currency;
+		if ($currency === null) {
+			try {
+				/** @var Currency $currency */
+				$currency = $this->entityManager->getRepository(Currency::class)
+					->createQueryBuilder('currency')
+					->where('currency.main = TRUE')
+					->setMaxResults(1)
+					->getQuery()
+					->getSingleResult();
+			} catch (NoResultException | NonUniqueResultException) {
+				$currency = $this->fixCurrenciesAndReturnMain();
+			}
 		}
+
+		return $currency;
 	}
 
 
