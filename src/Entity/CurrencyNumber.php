@@ -17,11 +17,11 @@ final class CurrencyNumber
 		?string $symbol = null,
 		bool $htmlCompatible = true
 	): string {
-		$decimalPrecision = $decimalPrecision ?? $currency->getDecimalPrecision();
-		$decimalSeparator = $decimalSeparator ?? $currency->getDecimalSeparator();
-		$thousandSeparator = $thousandSeparator ?? $currency->getThousandSeparator();
-		$schema = $schema ?? $currency->getDefaultSchema();
-		$symbol = $symbol ?? $currency->getSymbol();
+		$decimalPrecision ??= $currency->getDecimalPrecision();
+		$decimalSeparator ??= $currency->getDecimalSeparator();
+		$thousandSeparator ??= $currency->getThousandSeparator();
+		$schema ??= $currency->getDefaultSchema();
+		$symbol ??= $currency->getSymbol();
 
 		if ($value < 0) {
 			$value = -$value;
