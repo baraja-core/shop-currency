@@ -6,6 +6,7 @@ namespace Baraja\Shop\Currency;
 
 
 use Baraja\Doctrine\EntityManager;
+use Baraja\Localization\Localization;
 use Baraja\Shop\Entity\Currency\Currency;
 use Baraja\Shop\Entity\Currency\ExchangeRate;
 use Doctrine\ORM\NonUniqueResultException;
@@ -13,6 +14,14 @@ use Doctrine\ORM\NoResultException;
 
 final class CurrencyManager
 {
+	public const LOCALE_TO_CURRENCY = [
+		'cs' => 'CZK',
+		'sk' => 'EUR',
+		'en' => 'EUR',
+		'de' => 'EUR',
+	];
+
+
 	public function __construct(
 		private EntityManager $entityManager,
 	) {
@@ -95,6 +104,9 @@ final class CurrencyManager
 	}
 
 
+	/**
+	 * @throws NoResultException|NonUniqueResultException
+	 */
 	public function getCurrency(Currency|string $code): Currency
 	{
 		if ($code instanceof Currency) {
@@ -108,6 +120,39 @@ final class CurrencyManager
 			->setMaxResults(1)
 			->getQuery()
 			->getSingleResult();
+	}
+
+
+	public function getByLocale(string $locale): Currency
+	{
+		$locale = Localization::normalize($locale);
+		try {
+			/** @var Currency $currency */
+			$currency = $this->entityManager->getRepository(Currency::class)
+				->createQueryBuilder('currency')
+				->where('currency.locale = :locale')
+				->setParameter('locale', $locale)
+				->setMaxResults(1)
+				->getQuery()
+				->getSingleResult();
+		} catch (NoResultException | NonUniqueResultException) {
+			$currencyCode = self::LOCALE_TO_CURRENCY[$locale] ?? null;
+			if ($currencyCode !== null) {
+				try {
+					$currency = $this->getCurrency($currencyCode);
+					$currency->setLocale($locale);
+					$this->entityManager->flush();
+				} catch (NoResultException | NonUniqueResultException) {
+					$currency = $this->getMainCurrency();
+					if ($currency->getLocale() === null) {
+						$currency->setLocale($locale);
+						$this->entityManager->flush();
+					}
+				}
+			}
+		}
+
+		return $currency;
 	}
 
 
