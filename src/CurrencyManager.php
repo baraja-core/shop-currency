@@ -32,16 +32,24 @@ final class CurrencyManager
 	{
 		static $currency;
 		if ($currency === null) {
-			try {
-				/** @var Currency $currency */
-				$currency = $this->entityManager->getRepository(Currency::class)
-					->createQueryBuilder('currency')
-					->where('currency.main = TRUE')
-					->setMaxResults(1)
-					->getQuery()
-					->getSingleResult();
-			} catch (NoResultException | NonUniqueResultException) {
-				$currency = $this->fixCurrenciesAndReturnMain();
+			$entityMap = $this->entityManager->getUnitOfWork()->getIdentityMap();
+			foreach ($entityMap[Currency::class] ?? [] as $entity) {
+				if ($entity instanceof Currency && $entity->isMain()) {
+					$currency = $entity;
+				}
+			}
+			if ($currency === null) {
+				try {
+					/** @var Currency $currency */
+					$currency = $this->entityManager->getRepository(Currency::class)
+						->createQueryBuilder('currency')
+						->where('currency.main = TRUE')
+						->setMaxResults(1)
+						->getQuery()
+						->getSingleResult();
+				} catch (NoResultException | NonUniqueResultException) {
+					$currency = $this->fixCurrenciesAndReturnMain();
+				}
 			}
 		}
 
