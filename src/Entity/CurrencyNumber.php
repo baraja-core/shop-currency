@@ -15,7 +15,7 @@ final class CurrencyNumber
 		?string $thousandSeparator = null,
 		?string $decimalSeparator = null,
 		?string $symbol = null,
-		bool $htmlCompatible = true
+		bool $htmlCompatible = true,
 	): string {
 		$decimalPrecision ??= $currency->getDecimalPrecision();
 		$decimalSeparator ??= $currency->getDecimalSeparator();
@@ -43,7 +43,7 @@ final class CurrencyNumber
 		float $value,
 		int $decimalPrecision,
 		?string $decimalSeparator = ',',
-		?string $thousandSeparator = ' '
+		?string $thousandSeparator = ' ',
 	): string {
 		return number_format($value, $decimalPrecision, $decimalSeparator, $thousandSeparator);
 	}

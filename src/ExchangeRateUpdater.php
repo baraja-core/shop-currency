@@ -45,7 +45,7 @@ final class ExchangeRateUpdater
 					continue;
 				}
 				$this->entityManager->persist(
-					$this->fetcher->fetch($source, $target, $date)
+					$this->fetcher->fetch($source, $target, $date),
 				);
 			}
 		}

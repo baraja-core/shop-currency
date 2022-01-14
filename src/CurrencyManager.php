@@ -60,12 +60,15 @@ final class CurrencyManager implements CurrencyManagerInterface
 	}
 
 
-	public function getRateToday(CurrencyInterface|string $source, CurrencyInterface|string $target): ExchangeRateInterface
+	public function getRateToday(
+		CurrencyInterface|string $source,
+		CurrencyInterface|string $target,
+	): ExchangeRateInterface
 	{
 		return $this->getRate(
 			source: $source,
 			target: $target,
-			date: new \DateTimeImmutable('today')
+			date: new \DateTimeImmutable('today'),
 		);
 	}
 
@@ -73,7 +76,7 @@ final class CurrencyManager implements CurrencyManagerInterface
 	public function getRate(
 		CurrencyInterface|string $source,
 		CurrencyInterface|string $target,
-		\DateTimeInterface $date
+		\DateTimeInterface $date,
 	): ExchangeRateInterface {
 		$date = ExchangeRateFetcher::resolveDate($date);
 		try {
@@ -92,7 +95,7 @@ final class CurrencyManager implements CurrencyManagerInterface
 				->fetch(
 					$this->getCurrency($source),
 					$this->getCurrency($target),
-					$date
+					$date,
 				);
 			$this->entityManager->persist($rate);
 			$this->entityManager->flush();
