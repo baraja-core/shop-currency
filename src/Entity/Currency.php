@@ -6,12 +6,13 @@ namespace Baraja\Shop\Entity\Currency;
 
 
 use Baraja\Doctrine\Identifier\IdentifierUnsigned;
+use Baraja\EcommerceStandard\DTO\CurrencyInterface;
 use Baraja\Localization\Localization;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'shop__currency')]
-class Currency
+class Currency implements CurrencyInterface
 {
 	use IdentifierUnsigned;
 
@@ -75,6 +76,14 @@ class Currency
 		}
 
 		return $code;
+	}
+
+
+	public function renderPrice(float $price, bool $html = false): string
+	{
+		$formatted = str_replace(',00', '', number_format($price, 2, ',', ' '));
+
+		return sprintf('%s %s', $formatted, $this->getSymbol());
 	}
 
 
