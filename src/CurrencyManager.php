@@ -6,13 +6,16 @@ namespace Baraja\Shop\Currency;
 
 
 use Baraja\Doctrine\EntityManager;
+use Baraja\EcommerceStandard\DTO\CurrencyInterface;
+use Baraja\EcommerceStandard\DTO\ExchangeRateInterface;
+use Baraja\EcommerceStandard\Service\CurrencyManagerInterface;
 use Baraja\Localization\Localization;
 use Baraja\Shop\Entity\Currency\Currency;
 use Baraja\Shop\Entity\Currency\ExchangeRate;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\NoResultException;
 
-final class CurrencyManager
+final class CurrencyManager implements CurrencyManagerInterface
 {
 	public const LOCALE_TO_CURRENCY = [
 		'cs' => 'CZK',
@@ -57,7 +60,7 @@ final class CurrencyManager
 	}
 
 
-	public function getRateToday(Currency|string $source, Currency|string $target): ExchangeRate
+	public function getRateToday(CurrencyInterface|string $source, CurrencyInterface|string $target): ExchangeRateInterface
 	{
 		return $this->getRate(
 			source: $source,
@@ -68,10 +71,10 @@ final class CurrencyManager
 
 
 	public function getRate(
-		Currency|string $source,
-		Currency|string $target,
+		CurrencyInterface|string $source,
+		CurrencyInterface|string $target,
 		\DateTimeInterface $date
-	): ExchangeRate {
+	): ExchangeRateInterface {
 		$date = ExchangeRateFetcher::resolveDate($date);
 		try {
 			return $this->entityManager->getRepository(ExchangeRate::class)
@@ -100,7 +103,7 @@ final class CurrencyManager
 
 
 	/**
-	 * @return array<int, Currency>
+	 * @return array<int, CurrencyInterface>
 	 */
 	public function getCurrencies(): array
 	{
@@ -115,7 +118,7 @@ final class CurrencyManager
 	/**
 	 * @throws NoResultException|NonUniqueResultException
 	 */
-	public function getCurrency(Currency|string $code): Currency
+	public function getCurrency(CurrencyInterface|string $code): Currency
 	{
 		if ($code instanceof Currency) {
 			return $code;
@@ -131,7 +134,7 @@ final class CurrencyManager
 	}
 
 
-	public function getByLocale(string $locale): Currency
+	public function getByLocale(string $locale): CurrencyInterface
 	{
 		$locale = Localization::normalize($locale);
 		try {
@@ -164,7 +167,7 @@ final class CurrencyManager
 	}
 
 
-	public function createCurrency(string $code, string $symbol): Currency
+	public function createCurrency(string $code, string $symbol): CurrencyInterface
 	{
 		$currency = new Currency($code, $symbol);
 		$this->entityManager->persist($currency);
@@ -174,7 +177,7 @@ final class CurrencyManager
 	}
 
 
-	public function setMainCurrency(Currency|string $currency): void
+	public function setMainCurrency(CurrencyInterface|string $currency): void
 	{
 		if (is_string($currency) === true) {
 			$currency = $this->getCurrency($currency);
@@ -187,7 +190,7 @@ final class CurrencyManager
 	}
 
 
-	private function fixCurrenciesAndReturnMain(): Currency
+	private function fixCurrenciesAndReturnMain(): CurrencyInterface
 	{
 		$main = null;
 		$first = null;

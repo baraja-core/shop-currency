@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Baraja\Shop\Entity\Currency;
 
 
-use Baraja\Doctrine\Identifier\IdentifierUnsigned;
 use Baraja\EcommerceStandard\DTO\CurrencyInterface;
 use Baraja\Localization\Localization;
 use Doctrine\ORM\Mapping as ORM;
@@ -14,7 +13,10 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'shop__currency')]
 class Currency implements CurrencyInterface
 {
-	use IdentifierUnsigned;
+	#[ORM\Id]
+	#[ORM\Column(type: 'integer', unique: true, options: ['unsigned' => true])]
+	#[ORM\GeneratedValue]
+	protected int $id;
 
 	#[ORM\Column(type: 'string', length: 3, unique: true)]
 	private string $code;
@@ -76,6 +78,12 @@ class Currency implements CurrencyInterface
 		}
 
 		return $code;
+	}
+
+
+	public function getId(): int
+	{
+		return $this->id;
 	}
 
 
