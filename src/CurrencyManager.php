@@ -121,19 +121,22 @@ final class CurrencyManager implements CurrencyManagerInterface
 	/**
 	 * @throws NoResultException|NonUniqueResultException
 	 */
-	public function getCurrency(CurrencyInterface|string $code): Currency
+	public function getCurrency(CurrencyInterface|string $code): CurrencyInterface
 	{
-		if ($code instanceof Currency) {
+		if ($code instanceof CurrencyInterface) {
 			return $code;
 		}
 
-		return $this->entityManager->getRepository(Currency::class)
+		$return = $this->entityManager->getRepository(Currency::class)
 			->createQueryBuilder('currency')
 			->where('currency.code = :code')
 			->setParameter('code', Currency::normalizeCode($code))
 			->setMaxResults(1)
 			->getQuery()
 			->getSingleResult();
+		assert($return instanceof Currency);
+
+		return $return;
 	}
 
 
@@ -163,6 +166,8 @@ final class CurrencyManager implements CurrencyManagerInterface
 						$this->entityManager->flush();
 					}
 				}
+			} else {
+				throw new \LogicException(sprintf('Currency for locale "%s" does not exist.', $locale));
 			}
 		}
 
@@ -186,9 +191,9 @@ final class CurrencyManager implements CurrencyManagerInterface
 			$currency = $this->getCurrency($currency);
 		}
 		foreach ($this->getCurrencies() as $currencyItem) {
-			$currencyItem->setMain(false);
+			$this->markCurrencyAsMain($currencyItem, false);
 		}
-		$currency->setMain(true);
+		$this->markCurrencyAsMain($currency, true);
 		$this->entityManager->flush();
 	}
 
@@ -205,7 +210,7 @@ final class CurrencyManager implements CurrencyManagerInterface
 			if ($main === null && $currency->isMain() === true) {
 				$main = $currency;
 			} elseif ($currency->isMain()) {
-				$currency->setMain(false);
+				$this->markCurrencyAsMain($currency, false);
 				$needFlush = true;
 			}
 		}
@@ -214,11 +219,11 @@ final class CurrencyManager implements CurrencyManagerInterface
 			$return = $main;
 		} elseif ($first !== null) {
 			$return = $first;
-			$first->setMain(true);
+			$this->markCurrencyAsMain($first, true);
 			$needFlush = true;
 		} else {
 			$return = $this->createCurrency('USD', '$');
-			$return->setMain(true);
+			$this->markCurrencyAsMain($return, true);
 			$return->setLocale('en');
 			$needFlush = true;
 		}
@@ -227,5 +232,13 @@ final class CurrencyManager implements CurrencyManagerInterface
 		}
 
 		return $return;
+	}
+
+
+	private function markCurrencyAsMain(CurrencyInterface $currency, bool $main): void
+	{
+		if ($currency instanceof Currency) {
+			$currency->setMain($main);
+		}
 	}
 }

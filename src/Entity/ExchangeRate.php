@@ -19,10 +19,10 @@ class ExchangeRate implements ExchangeRateInterface
 	protected int $id;
 
 	#[ORM\ManyToOne(targetEntity: Currency::class)]
-	private Currency $currencySource;
+	private CurrencyInterface $currencySource;
 
 	#[ORM\ManyToOne(targetEntity: Currency::class)]
-	private Currency $currencyTarget;
+	private CurrencyInterface $currencyTarget;
 
 	#[ORM\Column(type: 'string', length: 6)]
 	private string $pair;
@@ -40,7 +40,7 @@ class ExchangeRate implements ExchangeRateInterface
 	private ?float $middle = null;
 
 
-	public function __construct(Currency $currencySource, Currency $currencyTarget)
+	public function __construct(CurrencyInterface $currencySource, CurrencyInterface $currencyTarget)
 	{
 		$this->currencySource = $currencySource;
 		$this->currencyTarget = $currencyTarget;
@@ -66,6 +66,8 @@ class ExchangeRate implements ExchangeRateInterface
 
 	public function getId(): int
 	{
+		assert($this->id > 0);
+
 		return $this->id;
 	}
 
@@ -96,7 +98,7 @@ class ExchangeRate implements ExchangeRateInterface
 
 	public function getValue(): float
 	{
-		$value = (float) ($this->getMiddle() ?? ((($this->getBuy() ?? 0.0) + ($this->getSell() ?? 0.0)) / 2));
+		$value = $this->getMiddle() ?? ((($this->getBuy() ?? 0.0) + ($this->getSell() ?? 0.0)) / 2);
 		if (abs($value) < 1e-10) { // is zero?
 			throw new \LogicException(sprintf('Exchange rate can not be resolved for "%s" and date "%s".',
 				$this->getPair(),

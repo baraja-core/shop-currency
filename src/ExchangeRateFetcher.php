@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Baraja\Shop\Currency;
 
 
+use Baraja\EcommerceStandard\DTO\CurrencyInterface;
 use Baraja\Shop\Entity\Currency\Currency;
 use Baraja\Shop\Entity\Currency\ExchangeRate;
 
@@ -47,7 +48,7 @@ final class ExchangeRateFetcher
 	}
 
 
-	public function fetch(Currency $source, Currency $target, \DateTimeInterface $date): ExchangeRate
+	public function fetch(CurrencyInterface $source, CurrencyInterface $target, \DateTimeInterface $date): ExchangeRate
 	{
 		$url = $this->baseUrl
 			. '?'
@@ -59,8 +60,8 @@ final class ExchangeRateFetcher
 				],
 			);
 
-		$payload = file_get_contents($url, false, stream_context_create($this->streamContext));
-		/** @var array{?error: bool, day: string, buy: float, sell: float, middle: float} $response */
+		$payload = (string) file_get_contents($url, false, stream_context_create($this->streamContext));
+		/** @var array{error?: bool, day: string, buy: float, sell: float, middle: float} $response */
 		$response = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
 
 		$rate = new ExchangeRate($source, $target);
