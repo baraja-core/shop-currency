@@ -162,7 +162,6 @@ final class CurrencyManager implements CurrencyManagerInterface
 					$this->entityManager->flush();
 				} catch (NoResultException | NonUniqueResultException) {
 					$currency = $this->getMainCurrency();
-					assert($currency instanceof Currency);
 					if ($currency->getLocale() === null) {
 						$currency->setLocale($locale);
 						$this->entityManager->flush();
