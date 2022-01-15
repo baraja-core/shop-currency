@@ -6,7 +6,6 @@ namespace Baraja\Shop\Currency;
 
 
 use Baraja\EcommerceStandard\DTO\CurrencyInterface;
-use Baraja\Shop\Entity\Currency\Currency;
 use Baraja\Shop\Entity\Currency\ExchangeRate;
 
 final class ExchangeRateFetcher

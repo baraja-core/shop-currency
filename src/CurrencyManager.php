@@ -157,10 +157,12 @@ final class CurrencyManager implements CurrencyManagerInterface
 			if ($currencyCode !== null) {
 				try {
 					$currency = $this->getCurrency($currencyCode);
+					assert($currency instanceof Currency);
 					$currency->setLocale($locale);
 					$this->entityManager->flush();
 				} catch (NoResultException | NonUniqueResultException) {
 					$currency = $this->getMainCurrency();
+					assert($currency instanceof Currency);
 					if ($currency->getLocale() === null) {
 						$currency->setLocale($locale);
 						$this->entityManager->flush();
@@ -224,6 +226,7 @@ final class CurrencyManager implements CurrencyManagerInterface
 		} else {
 			$return = $this->createCurrency('USD', '$');
 			$this->markCurrencyAsMain($return, true);
+			assert($return instanceof Currency);
 			$return->setLocale('en');
 			$needFlush = true;
 		}
