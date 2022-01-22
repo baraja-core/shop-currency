@@ -11,9 +11,6 @@ use Baraja\EcommerceStandard\DTO\ExchangeRateInterface;
 use Baraja\EcommerceStandard\Service\CurrencyManagerInterface;
 use Baraja\Localization\Localization;
 use Baraja\Shop\Entity\Currency\Currency;
-use Baraja\Shop\Entity\Currency\ExchangeRate;
-use Doctrine\ORM\NonUniqueResultException;
-use Doctrine\ORM\NoResultException;
 
 final class CurrencyManager implements CurrencyManagerInterface
 {
@@ -24,6 +21,9 @@ final class CurrencyManager implements CurrencyManagerInterface
 		'de' => 'EUR',
 	];
 
+	/** @var array<int, Currency> */
+	private array $list = [];
+
 
 	public function __construct(
 		private EntityManager $entityManager,
@@ -33,142 +33,102 @@ final class CurrencyManager implements CurrencyManagerInterface
 
 	public function getMainCurrency(): Currency
 	{
-		static $currency;
-		if ($currency === null) {
-			$entityMap = $this->entityManager->getUnitOfWork()->getIdentityMap();
-			foreach ($entityMap[Currency::class] ?? [] as $entity) {
-				if ($entity instanceof Currency && $entity->isMain()) {
-					$currency = $entity;
-				}
-			}
-			if ($currency === null) {
-				try {
-					/** @var Currency $currency */
-					$currency = $this->entityManager->getRepository(Currency::class)
-						->createQueryBuilder('currency')
-						->where('currency.main = TRUE')
-						->setMaxResults(1)
-						->getQuery()
-						->getSingleResult();
-				} catch (NoResultException | NonUniqueResultException) {
-					$currency = $this->fixCurrenciesAndReturnMain();
-				}
+		foreach ($this->getCurrencies() as $currency) {
+			if ($currency->isMain()) {
+				return $currency;
 			}
 		}
 
-		return $currency;
+		return $this->fixCurrenciesAndReturnMain();
 	}
 
 
+	/**
+	 * @deprecated since 2022-01-22
+	 */
 	public function getRateToday(
 		CurrencyInterface|string $source,
 		CurrencyInterface|string $target,
-	): ExchangeRateInterface
-	{
-		return $this->getRate(
-			source: $source,
-			target: $target,
-			date: new \DateTimeImmutable('today'),
-		);
+	): ExchangeRateInterface {
+		return (new ExchangeRateConvertor($this->entityManager, $this))
+			->getRateToday($source,$target);
 	}
 
 
+	/**
+	 * @deprecated since 2022-01-22
+	 */
 	public function getRate(
 		CurrencyInterface|string $source,
 		CurrencyInterface|string $target,
 		\DateTimeInterface $date,
 	): ExchangeRateInterface {
-		$date = ExchangeRateFetcher::resolveDate($date);
-		try {
-			return $this->entityManager->getRepository(ExchangeRate::class)
-				->createQueryBuilder('rate')
-				->where('rate.pair = :pair')
-				->andWhere('rate.date >= :date')
-				->setParameter('pair', ExchangeRate::formatPair($source, $target))
-				->setParameter('date', $date->format('Y-m-d') . ' 00:00:00')
-				->orderBy('rate.date', 'ASC')
-				->setMaxResults(1)
-				->getQuery()
-				->getSingleResult();
-		} catch (NoResultException | NonUniqueResultException) {
-			$rate = (new ExchangeRateFetcher)
-				->fetch(
-					$this->getCurrency($source),
-					$this->getCurrency($target),
-					$date,
-				);
-			$this->entityManager->persist($rate);
-			$this->entityManager->flush();
-
-			return $rate;
-		}
+		return (new ExchangeRateConvertor($this->entityManager, $this))
+			->getRate($source,$target, $date);
 	}
 
 
 	/**
-	 * @return array<int, CurrencyInterface>
+	 * @return array<int, Currency>
 	 */
 	public function getCurrencies(): array
 	{
-		return $this->entityManager->getRepository(Currency::class)
-			->createQueryBuilder('currency')
-			->orderBy('currency.main', 'DESC')
-			->getQuery()
-			->getResult();
+		if ($this->list === []) {
+			/** @var array<int, Currency> $list */
+			$list = $this->entityManager->getRepository(Currency::class)
+				->createQueryBuilder('currency')
+				->orderBy('currency.main', 'DESC')
+				->getQuery()
+				->getResult();
+			$return = [];
+			foreach ($list as $currency) {
+				$return[$currency->getId()] = $currency;
+			}
+			$this->list = $return;
+		}
+
+		return array_values($this->list);
 	}
 
 
-	/**
-	 * @throws NoResultException|NonUniqueResultException
-	 */
 	public function getCurrency(CurrencyInterface|string $code): CurrencyInterface
 	{
 		if ($code instanceof CurrencyInterface) {
 			return $code;
 		}
 
-		$return = $this->entityManager->getRepository(Currency::class)
-			->createQueryBuilder('currency')
-			->where('currency.code = :code')
-			->setParameter('code', Currency::normalizeCode($code))
-			->setMaxResults(1)
-			->getQuery()
-			->getSingleResult();
-		assert($return instanceof Currency);
+		$code = Currency::normalizeCode($code);
+		foreach ($this->getCurrencies() as $currency) {
+			if ($currency->getCode() === $code) {
+				return $currency;
+			}
+		}
 
-		return $return;
+		throw new \InvalidArgumentException(sprintf('Currency "%s" does not exist.', $code));
 	}
 
 
 	public function getByLocale(string $locale): CurrencyInterface
 	{
 		$locale = Localization::normalize($locale);
+		foreach ($this->getCurrencies() as $currency) {
+			if ($currency->getLocale() === $locale) {
+				return $currency;
+			}
+		}
+		if (isset(self::LOCALE_TO_CURRENCY[$locale]) === false) {
+			throw new \LogicException(sprintf('Currency for locale "%s" does not exist.', $locale));
+		}
 		try {
-			/** @var Currency $currency */
-			$currency = $this->entityManager->getRepository(Currency::class)
-				->createQueryBuilder('currency')
-				->where('currency.locale = :locale')
-				->setParameter('locale', $locale)
-				->setMaxResults(1)
-				->getQuery()
-				->getSingleResult();
-		} catch (NoResultException | NonUniqueResultException) {
-			$currencyCode = self::LOCALE_TO_CURRENCY[$locale] ?? null;
-			if ($currencyCode !== null) {
-				try {
-					$currency = $this->getCurrency($currencyCode);
-					assert($currency instanceof Currency);
-					$currency->setLocale($locale);
-					$this->entityManager->flush();
-				} catch (NoResultException | NonUniqueResultException) {
-					$currency = $this->getMainCurrency();
-					if ($currency->getLocale() === null) {
-						$currency->setLocale($locale);
-						$this->entityManager->flush();
-					}
-				}
-			} else {
-				throw new \LogicException(sprintf('Currency for locale "%s" does not exist.', $locale));
+			$currency = $this->getCurrency(self::LOCALE_TO_CURRENCY[$locale]);
+			assert($currency instanceof Currency);
+			$currency->setLocale($locale);
+			$this->entityManager->flush();
+		} catch (\InvalidArgumentException) {
+			$currency = $this->getMainCurrency();
+			if ($currency->getLocale() === null) {
+				$currency->setLocale($locale);
+				$this->entityManager->flush();
 			}
 		}
 
@@ -199,7 +159,7 @@ final class CurrencyManager implements CurrencyManagerInterface
 	}
 
 
-	private function fixCurrenciesAndReturnMain(): CurrencyInterface
+	private function fixCurrenciesAndReturnMain(): Currency
 	{
 		$main = null;
 		$first = null;
