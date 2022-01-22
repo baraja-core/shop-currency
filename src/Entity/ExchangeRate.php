@@ -7,10 +7,12 @@ namespace Baraja\Shop\Entity\Currency;
 
 use Baraja\EcommerceStandard\DTO\CurrencyInterface;
 use Baraja\EcommerceStandard\DTO\ExchangeRateInterface;
+use Baraja\Shop\Repository\ExchangeRateRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: ExchangeRateRepository::class)]
 #[ORM\Table(name: 'shop__currency_rate')]
+#[ORM\Index(columns: ['pair', 'date'], name: 'shop__currency_rate_pair')]
 class ExchangeRate implements ExchangeRateInterface
 {
 	#[ORM\Id]

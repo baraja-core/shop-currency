@@ -30,9 +30,10 @@ final class ExchangeRateFetcher
 	public static function resolveDate(\DateTimeInterface $date): \DateTimeImmutable
 	{
 		if ($date >= new \DateTimeImmutable('tomorrow')) {
-			throw new \InvalidArgumentException(
-				'Currency exchange rate date can not be in future, but "' . $date->format('Y-m-d') . '" given.',
-			);
+			throw new \InvalidArgumentException(sprintf(
+				'Currency exchange rate date can not be in future, but "%s" given.',
+				$date->format('Y-m-d'),
+			));
 		}
 		$now = new \DateTimeImmutable('now');
 		if ($date->format('Y-m-d') === $now->format('Y-m-d')) { // today
@@ -49,15 +50,17 @@ final class ExchangeRateFetcher
 
 	public function fetch(CurrencyInterface $source, CurrencyInterface $target, \DateTimeInterface $date): ExchangeRate
 	{
-		$url = $this->baseUrl
-			. '?'
-			. http_build_query(
+		$url = sprintf(
+			'%s?%s',
+			$this->baseUrl,
+			http_build_query(
 				[
 					'source' => $source->getCode(),
 					'target' => $target->getCode(),
 					'date' => self::resolveDate($date)->format('Y-m-d'),
 				],
-			);
+			),
+		);
 
 		$payload = (string) file_get_contents($url, false, stream_context_create($this->streamContext));
 		/** @var array{error?: bool, day: string, buy: float, sell: float, middle: float} $response */

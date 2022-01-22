@@ -27,5 +27,8 @@ final class ShopCurrencyExtension extends CompilerExtension
 
 		$builder->addAccessorDefinition($this->prefix('currencyManagerAccessor'))
 			->setImplement(CurrencyManagerAccessor::class);
+
+		$builder->addDefinition($this->prefix('exchangeRateConvertor'))
+			->setFactory(ExchangeRateConvertor::class);
 	}
 }
