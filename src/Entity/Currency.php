@@ -93,7 +93,6 @@ class Currency implements CurrencyInterface
 	 */
 	public function renderPrice(string $price, bool $html = false): string
 	{
-		$price = $price === '' ? '0' : $price;
 		$value = Price::normalize($price, $this->decimalPrecision);
 		if ($this->decimalSeparator !== '.') {
 			$value = str_replace('.', $this->decimalSeparator, $value);

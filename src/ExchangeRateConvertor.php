@@ -32,6 +32,9 @@ final class ExchangeRateConvertor
 	/**
 	 * A very fast and effective method for securely converting currency rates
 	 * and specific prices from one currency to another.
+	 *
+	 * @param PriceInterface|numeric-string $price
+	 * @return numeric-string
 	 */
 	public function convert(
 		PriceInterface|string $price,
@@ -40,12 +43,20 @@ final class ExchangeRateConvertor
 		?\DateTimeInterface $date = null,
 	): string {
 		$date ??= new \DateTimeImmutable('today');
+		if ($price instanceof PriceInterface) {
+			$source = $price->getCurrency();
+			$price = $price->getValue();
+		}
 
-		return bcdiv(
-			$price,
-			(string) $this->getRate($source, $target, $date)->getValue(),
-			2
-		);
+		$rate = (string) $this->getRate($source, $target, $date)->getValue();
+		if ($rate === '0') {
+			throw new \LogicException('Rate can not be null.');
+		}
+
+		$return = (string) bcdiv($price, $rate, 2);
+		assert(is_numeric($return));
+
+		return $return;
 	}
 
 
