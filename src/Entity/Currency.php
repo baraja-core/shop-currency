@@ -7,6 +7,7 @@ namespace Baraja\Shop\Entity\Currency;
 
 use Baraja\EcommerceStandard\DTO\CurrencyInterface;
 use Baraja\Localization\Localization;
+use Baraja\Shop\Price\Price;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -71,10 +72,10 @@ class Currency implements CurrencyInterface
 			throw new \InvalidArgumentException('Currency code is required.');
 		}
 		if (preg_match('/^[A-Z]{3}/', $code) !== 1) {
-			throw new \InvalidArgumentException(
-				'Currency code must be 3 exactly chars long, '
-				. 'for example "USD", but "' . $code . '" given.',
-			);
+			throw new \InvalidArgumentException(sprintf(
+				'Currency code must be 3 exactly chars long, for example "USD", but "%s" given.',
+				$code,
+			));
 		}
 
 		return $code;
@@ -87,11 +88,28 @@ class Currency implements CurrencyInterface
 	}
 
 
-	public function renderPrice(float $price, bool $html = false): string
+	/**
+	 * @param numeric-string $price
+	 */
+	public function renderPrice(string $price, bool $html = false): string
 	{
-		$formatted = str_replace(',00', '', number_format($price, 2, ',', ' '));
+		$price = $price === '' ? '0' : $price;
+		$value = Price::normalize($price, $this->decimalPrecision);
+		if ($this->decimalSeparator !== '.') {
+			$value = str_replace('.', $this->decimalSeparator, $value);
+		}
+		// TODO: $this->getThousandSeparator()
 
-		return sprintf('%s %s', $formatted, $this->getSymbol());
+		$return = str_replace(
+			['%NUM%', '%SYMBOL%'],
+			[$value, $this->getSymbol()],
+			$this->getDefaultSchema(),
+		);
+		if ($html) {
+			$return = str_replace(' ', '&nbsp;', $return);
+		}
+
+		return $return;
 	}
 
 
