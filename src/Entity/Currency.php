@@ -8,9 +8,10 @@ namespace Baraja\Shop\Entity\Currency;
 use Baraja\EcommerceStandard\DTO\CurrencyInterface;
 use Baraja\Localization\Localization;
 use Baraja\Shop\Price\Price;
+use Baraja\Shop\Repository\CurrencyRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: CurrencyRepository::class)]
 #[ORM\Table(name: 'shop__currency')]
 class Currency implements CurrencyInterface
 {

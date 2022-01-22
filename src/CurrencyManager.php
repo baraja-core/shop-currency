@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Baraja\Shop\Currency;
 
 
-use Baraja\Doctrine\EntityManager;
 use Baraja\EcommerceStandard\DTO\CurrencyInterface;
 use Baraja\EcommerceStandard\DTO\ExchangeRateInterface;
 use Baraja\EcommerceStandard\Service\CurrencyManagerInterface;
 use Baraja\Localization\Localization;
 use Baraja\Shop\Entity\Currency\Currency;
+use Baraja\Shop\Repository\CurrencyRepository;
+use Doctrine\ORM\EntityManagerInterface;
 
 final class CurrencyManager implements CurrencyManagerInterface
 {
@@ -26,7 +27,7 @@ final class CurrencyManager implements CurrencyManagerInterface
 
 
 	public function __construct(
-		private EntityManager $entityManager,
+		private EntityManagerInterface $entityManager,
 	) {
 	}
 
@@ -74,14 +75,10 @@ final class CurrencyManager implements CurrencyManagerInterface
 	public function getCurrencies(): array
 	{
 		if ($this->list === []) {
-			/** @var array<int, Currency> $list */
-			$list = $this->entityManager->getRepository(Currency::class)
-				->createQueryBuilder('currency')
-				->orderBy('currency.main', 'DESC')
-				->getQuery()
-				->getResult();
+			$currencyRepository = $this->entityManager->getRepository(Currency::class);
+			assert($currencyRepository instanceof CurrencyRepository);
 			$return = [];
-			foreach ($list as $currency) {
+			foreach ($currencyRepository->getAllCurrencies() as $currency) {
 				$return[$currency->getId()] = $currency;
 			}
 			$this->list = $return;
