@@ -22,25 +22,29 @@ final class CurrencyManager implements CurrencyManagerInterface
 		'de' => 'EUR',
 	];
 
+	private ?CurrencyResolver $currencyResolver = null;
+
 	/** @var array<int, Currency> */
-	private array $list = [];
+	private array $listById = [];
+
+	/** @var array<string, Currency> */
+	private array $listByCode = [];
+
+	private ?Currency $main = null;
 
 
 	public function __construct(
 		private EntityManagerInterface $entityManager,
+		private Localization $localization,
 	) {
 	}
 
 
 	public function getMainCurrency(): Currency
 	{
-		foreach ($this->getCurrencies() as $currency) {
-			if ($currency->isMain()) {
-				return $currency;
-			}
-		}
+		$this->loadCache();
 
-		return $this->fixCurrenciesAndReturnMain();
+		return $this->main ?? $this->fixCurrenciesAndReturnMain();
 	}
 
 
@@ -74,17 +78,9 @@ final class CurrencyManager implements CurrencyManagerInterface
 	 */
 	public function getCurrencies(): array
 	{
-		if ($this->list === []) {
-			$currencyRepository = $this->entityManager->getRepository(Currency::class);
-			assert($currencyRepository instanceof CurrencyRepository);
-			$return = [];
-			foreach ($currencyRepository->getAllCurrencies() as $currency) {
-				$return[$currency->getId()] = $currency;
-			}
-			$this->list = $return;
-		}
+		$this->loadCache();
 
-		return array_values($this->list);
+		return array_values($this->listById);
 	}
 
 
@@ -95,10 +91,9 @@ final class CurrencyManager implements CurrencyManagerInterface
 		}
 
 		$code = Currency::normalizeCode($code);
-		foreach ($this->getCurrencies() as $currency) {
-			if ($currency->getCode() === $code) {
-				return $currency;
-			}
+		$this->loadCache();
+		if (isset($this->listByCode[$code])) {
+			return $this->listByCode[$code];
 		}
 
 		throw new \InvalidArgumentException(sprintf('Currency "%s" does not exist.', $code));
@@ -156,6 +151,16 @@ final class CurrencyManager implements CurrencyManagerInterface
 	}
 
 
+	public function getCurrencyResolver(): CurrencyResolver
+	{
+		if ($this->currencyResolver === null) {
+			$this->currencyResolver = new CurrencyResolver($this->localization, $this);
+		}
+
+		return $this->currencyResolver;
+	}
+
+
 	private function fixCurrenciesAndReturnMain(): Currency
 	{
 		$main = null;
@@ -198,6 +203,30 @@ final class CurrencyManager implements CurrencyManagerInterface
 	{
 		if ($currency instanceof Currency) {
 			$currency->setMain($main);
+			if ($main) {
+				$this->main = $currency;
+			}
 		}
+	}
+
+
+	private function loadCache(): void
+	{
+		if ($this->listById !== []) {
+			return;
+		}
+		$currencyRepository = $this->entityManager->getRepository(Currency::class);
+		assert($currencyRepository instanceof CurrencyRepository);
+		$listById = [];
+		$listByCode = [];
+		foreach ($currencyRepository->getAllCurrencies() as $currency) {
+			$listById[$currency->getId()] = $currency;
+			$listByCode[$currency->getCode()] = $currency;
+			if ($currency->isMain()) {
+				$this->main = $currency;
+			}
+		}
+		$this->listById = $listById;
+		$this->listByCode = $listByCode;
 	}
 }
