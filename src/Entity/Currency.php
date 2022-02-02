@@ -113,6 +113,12 @@ class Currency implements CurrencyInterface
 	}
 
 
+	public function __toString(): string
+	{
+		return $this->getCode();
+	}
+
+
 	public function getCode(): string
 	{
 		return $this->code;
