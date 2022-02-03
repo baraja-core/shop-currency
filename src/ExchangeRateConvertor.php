@@ -8,13 +8,14 @@ namespace Baraja\Shop\Currency;
 use Baraja\EcommerceStandard\DTO\CurrencyInterface;
 use Baraja\EcommerceStandard\DTO\ExchangeRateInterface;
 use Baraja\EcommerceStandard\DTO\PriceInterface;
+use Baraja\EcommerceStandard\Service\ExchangeRateConvertorInterface;
 use Baraja\Shop\Entity\Currency\ExchangeRate;
 use Baraja\Shop\Repository\ExchangeRateRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\NoResultException;
 
-final class ExchangeRateConvertor
+final class ExchangeRateConvertor implements ExchangeRateConvertorInterface
 {
 	private ExchangeRateRepository $exchangeRateRepository;
 
