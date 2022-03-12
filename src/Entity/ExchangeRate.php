@@ -5,21 +5,26 @@ declare(strict_types=1);
 namespace Baraja\Shop\Entity\Currency;
 
 
-use Baraja\Doctrine\Identifier\IdentifierUnsigned;
+use Baraja\EcommerceStandard\DTO\CurrencyInterface;
+use Baraja\EcommerceStandard\DTO\ExchangeRateInterface;
+use Baraja\Shop\Repository\ExchangeRateRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Nette\Utils\Floats;
 
-#[ORM\Entity]
-#[ORM\Table(name: 'shop__currency')]
-class ExchangeRate
+#[ORM\Entity(repositoryClass: ExchangeRateRepository::class)]
+#[ORM\Table(name: 'shop__currency_rate')]
+#[ORM\Index(columns: ['pair', 'date'], name: 'shop__currency_rate_pair')]
+class ExchangeRate implements ExchangeRateInterface
 {
-	use IdentifierUnsigned;
+	#[ORM\Id]
+	#[ORM\Column(type: 'integer', unique: true, options: ['unsigned' => true])]
+	#[ORM\GeneratedValue]
+	protected int $id;
 
 	#[ORM\ManyToOne(targetEntity: Currency::class)]
-	private Currency $currencySource;
+	private CurrencyInterface $currencySource;
 
 	#[ORM\ManyToOne(targetEntity: Currency::class)]
-	private Currency $currencyTarget;
+	private CurrencyInterface $currencyTarget;
 
 	#[ORM\Column(type: 'string', length: 6)]
 	private string $pair;
@@ -37,7 +42,7 @@ class ExchangeRate
 	private ?float $middle = null;
 
 
-	public function __construct(Currency $currencySource, Currency $currencyTarget)
+	public function __construct(CurrencyInterface $currencySource, CurrencyInterface $currencyTarget)
 	{
 		$this->currencySource = $currencySource;
 		$this->currencyTarget = $currencyTarget;
@@ -46,28 +51,36 @@ class ExchangeRate
 	}
 
 
-	public static function formatPair(Currency|string $source, Currency|string $target): string
+	public static function formatPair(CurrencyInterface|string $source, CurrencyInterface|string $target): string
 	{
-		if ($source instanceof Currency) {
+		if ($source instanceof CurrencyInterface) {
 			$source = $source->getCode();
 		}
-		if ($target instanceof Currency) {
+		if ($target instanceof CurrencyInterface) {
 			$target = $target->getCode();
 		}
-		Currency::validateCode($source);
-		Currency::validateCode($target);
+		$source = Currency::normalizeCode($source);
+		$target = Currency::normalizeCode($target);
 
 		return $source . $target;
 	}
 
 
-	public function getCurrencySource(): Currency
+	public function getId(): int
+	{
+		assert($this->id > 0);
+
+		return $this->id;
+	}
+
+
+	public function getCurrencySource(): CurrencyInterface
 	{
 		return $this->currencySource;
 	}
 
 
-	public function getCurrencyTarget(): Currency
+	public function getCurrencyTarget(): CurrencyInterface
 	{
 		return $this->currencyTarget;
 	}
@@ -87,12 +100,12 @@ class ExchangeRate
 
 	public function getValue(): float
 	{
-		$value = (float) ($this->getMiddle() ?? ((($this->getBuy() ?? 0) + ($this->getSell() ?? 0)) / 2));
-		if (Floats::isZero($value)) {
-			throw new \LogicException(
-				'Exchange rate can not be resolved for "' . $this->getPair() . '" '
-				. 'and date "' . $this->getDate()->format('Y-m-d') . '".',
-			);
+		$value = $this->getMiddle() ?? ((($this->getBuy() ?? 0.0) + ($this->getSell() ?? 0.0)) / 2);
+		if (abs($value) < 1e-10) { // is zero?
+			throw new \LogicException(sprintf('Exchange rate can not be resolved for "%s" and date "%s".',
+				$this->getPair(),
+				$this->getDate()->format('Y-m-d'),
+			));
 		}
 
 		return $value;
@@ -108,9 +121,10 @@ class ExchangeRate
 	public function setBuy(?float $value): void
 	{
 		if ($value !== null && $value < 0) {
-			throw new \InvalidArgumentException(
-				'Exchange rate: Buy value "' . $value . '" for "' . $this->getPair() . '" can not be negative.',
-			);
+			throw new \InvalidArgumentException(sprintf('Exchange rate: Buy value "%s" for "%s" can not be negative.',
+				$value,
+				$this->getPair(),
+			));
 		}
 		$this->buy = $value;
 	}
@@ -125,9 +139,10 @@ class ExchangeRate
 	public function setSell(?float $value): void
 	{
 		if ($value !== null && $value < 0) {
-			throw new \InvalidArgumentException(
-				'Exchange rate: Sell value "' . $value . '" for "' . $this->getPair() . '" can not be negative.',
-			);
+			throw new \InvalidArgumentException(sprintf('Exchange rate: Sell value "%s" for "%s" can not be negative.',
+				$value,
+				$this->getPair(),
+			));
 		}
 		$this->sell = $value;
 	}
@@ -142,9 +157,10 @@ class ExchangeRate
 	public function setMiddle(?float $value): void
 	{
 		if ($value !== null && $value < 0) {
-			throw new \InvalidArgumentException(
-				'Exchange rate: Middle value "' . $value . '" for "' . $this->getPair() . '" can not be negative.',
-			);
+			throw new \InvalidArgumentException(sprintf('Exchange rate: Middle value "%s" for "%s" can not be negative.',
+				$value,
+				$this->getPair(),
+			));
 		}
 		$this->middle = $value;
 	}

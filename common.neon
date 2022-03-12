@@ -1,0 +1,2 @@
+extensions:
+	shopCurrency: Baraja\Shop\Currency\ShopCurrencyExtension
