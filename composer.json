@@ -9,7 +9,7 @@
 		}
 	],
 	"require": {
-		"php": "^8.0",
+		"php": "^8.1",
 		"baraja-core/ecommerce-standard": "^0.0",
 		"baraja-core/doctrine": "^3.2",
 		"baraja-core/shop-price": "^1.1",

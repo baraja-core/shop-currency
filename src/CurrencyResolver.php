@@ -39,7 +39,7 @@ final class CurrencyResolver
 
 	public function setCurrency(?CurrencyInterface $currency = null): void
 	{
-		$this->setSessionValue($currency !== null ? $currency->getCode() : null);
+		$this->setSessionValue($currency?->getCode());
 	}
 
 
