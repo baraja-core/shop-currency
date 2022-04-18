@@ -54,10 +54,7 @@ final class ExchangeRateConvertor implements ExchangeRateConvertorInterface
 			throw new \LogicException('Rate can not be null.');
 		}
 
-		$return = (string) bcdiv($price, $rate, 2);
-		assert(is_numeric($return));
-
-		return $return;
+		return bcdiv($price, $rate, 2);
 	}
 
 
