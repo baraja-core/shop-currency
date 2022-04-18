@@ -102,7 +102,8 @@ class ExchangeRate implements ExchangeRateInterface
 	{
 		$value = $this->getMiddle() ?? ((($this->getBuy() ?? 0.0) + ($this->getSell() ?? 0.0)) / 2);
 		if (abs($value) < 1e-10) { // is zero?
-			throw new \LogicException(sprintf('Exchange rate can not be resolved for "%s" and date "%s".',
+			throw new \LogicException(sprintf(
+				'Exchange rate can not be resolved for "%s" and date "%s".',
 				$this->getPair(),
 				$this->getDate()->format('Y-m-d'),
 			));
@@ -121,7 +122,8 @@ class ExchangeRate implements ExchangeRateInterface
 	public function setBuy(?float $value): void
 	{
 		if ($value !== null && $value < 0) {
-			throw new \InvalidArgumentException(sprintf('Exchange rate: Buy value "%s" for "%s" can not be negative.',
+			throw new \InvalidArgumentException(sprintf(
+				'Exchange rate: Buy value "%s" for "%s" can not be negative.',
 				$value,
 				$this->getPair(),
 			));
@@ -139,7 +141,8 @@ class ExchangeRate implements ExchangeRateInterface
 	public function setSell(?float $value): void
 	{
 		if ($value !== null && $value < 0) {
-			throw new \InvalidArgumentException(sprintf('Exchange rate: Sell value "%s" for "%s" can not be negative.',
+			throw new \InvalidArgumentException(sprintf(
+				'Exchange rate: Sell value "%s" for "%s" can not be negative.',
 				$value,
 				$this->getPair(),
 			));
@@ -157,7 +160,8 @@ class ExchangeRate implements ExchangeRateInterface
 	public function setMiddle(?float $value): void
 	{
 		if ($value !== null && $value < 0) {
-			throw new \InvalidArgumentException(sprintf('Exchange rate: Middle value "%s" for "%s" can not be negative.',
+			throw new \InvalidArgumentException(sprintf(
+				'Exchange rate: Middle value "%s" for "%s" can not be negative.',
 				$value,
 				$this->getPair(),
 			));

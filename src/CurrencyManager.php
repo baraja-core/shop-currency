@@ -56,7 +56,7 @@ final class CurrencyManager implements CurrencyManagerInterface
 		CurrencyInterface|string $target,
 	): ExchangeRateInterface {
 		return (new ExchangeRateConvertor($this->entityManager, $this))
-			->getRateToday($source,$target);
+			->getRateToday($source, $target);
 	}
 
 
@@ -69,7 +69,7 @@ final class CurrencyManager implements CurrencyManagerInterface
 		\DateTimeInterface $date,
 	): ExchangeRateInterface {
 		return (new ExchangeRateConvertor($this->entityManager, $this))
-			->getRate($source,$target, $date);
+			->getRate($source, $target, $date);
 	}
 
 
