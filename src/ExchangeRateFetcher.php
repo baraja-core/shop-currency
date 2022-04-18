@@ -38,7 +38,7 @@ final class ExchangeRateFetcher
 		$now = new \DateTimeImmutable('now');
 		if ($date->format('Y-m-d') === $now->format('Y-m-d')) { // today
 			$nowHour = (int) $now->format('H');
-			$nowMinute = (int) $now->format('m');
+			$nowMinute = (int) $now->format('i');
 			if ($nowHour < 14 || ($nowHour === 14 && $nowMinute < 45)) {
 				return new \DateTimeImmutable('yesterday');
 			}
